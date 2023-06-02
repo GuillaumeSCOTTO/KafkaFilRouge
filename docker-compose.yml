@@ -1,0 +1,57 @@
+version: "3"
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: DOCKER://kafka:29092,LOCAL://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: DOCKER://kafka:29092,LOCAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,LOCAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+      
+  consumer_offense:
+    build: 
+      context: ./code
+      dockerfile: ./consumer_offense/Dockerfile
+    container_name: consumer_offense
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: my_stream
+      KAFKA_GROUP_NAME: group1
+      INFERENCE_PYTHON_FILE: offense_inference
+      INFERENCE_PYTHON_MODEL: model_offense_inference.pth.tar
+      INFERENCE_CLASSIFIER: false
+      INFERENCE_CLASSIFIER_NAME: predict
+    restart: "always"
+    
+  consumer_sentiment:
+    build: 
+      context: ./code
+      dockerfile: ./consumer_sentiment/Dockerfile
+    container_name: consumer_sentiment
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: my_stream
+      KAFKA_GROUP_NAME: group2
+      INFERENCE_PYTHON_FILE: sentiment_inference
+      INFERENCE_PYTHON_MODEL: model_sentiment_inference.pth
+      INFERENCE_CLASSIFIER: true
+      INFERENCE_CLASSIFIER_NAME: SentimentClassifier
+    restart: "always"
