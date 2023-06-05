@@ -1,19 +1,46 @@
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, Producer
 import os
 import json
 import logging
+import socket
+
 # import importlib
 
+TOPIC_FOR_SEND = "inner_topic"
 
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
-    val[inf_module_name.split('_')[0]] = inference.predict(model, val['tweet'])
+    result = inference.predict(model, val['tweet'])
+    val[inf_module_name.split('_')[0]] = result
     with open("result.txt", "a") as f:
         f.write(str(val) + "\n")
         logging.debug(f'##Msg reçu: {val}')
+    return val
+
+
+
+def acked(err, msg):
+    if err is not None:
+        logging.debug(f'##Failed to deliver message: {err}')
+        #print("Failed to deliver message: %s: %s" % (str(msg.value()), str(err)))
+    else:
+        #print("Topic: %s, Partition: %s, Message produced: %s, " % (str(msg.topic()), str(msg.partition()), str(msg.value())))
+        logging.debug(f'##Message envoyé: {str(msg.topic()), str(msg.partition()), str(msg.value())}')
+        
+def res_send(value,producer):
+    
+    result = json.dumps(value)
+    producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
 
 
 def main():
+
+    # On créé l'instance producer pour envoyer les résultats qui seront calculés
+    conf = {'bootstrap.servers': "kafka:9092",
+            'client.id': socket.gethostname()}
+    producer_for_res = Producer(conf)
+
+
     c = Consumer({
         'bootstrap.servers': kafka_bootstrap_servers,
         'group.id': kafka_group_name
@@ -35,7 +62,13 @@ def main():
                 else:
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
-                msg_process(msg)
+                val = msg_process(msg)
+                try: 
+                    res_send(val,producer_for_res )
+                    producer_for_res.flush()
+                except Exception as e:
+                    logging.debug(f'Error while sending message: {e}')
+                
     except KeyboardInterrupt:
         pass
     finally:

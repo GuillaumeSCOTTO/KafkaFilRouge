@@ -44,6 +44,7 @@ def main():
             'client.id': socket.gethostname()}
     producer = Producer(conf)
     firstline = True
+    print("producer started")
 
     dir = '/'.join(os.getcwd().split('\\'))
     for row in rows_from_a_csv_file(dir + '/' + args.filename):
