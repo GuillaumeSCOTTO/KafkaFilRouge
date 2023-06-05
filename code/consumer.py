@@ -13,6 +13,12 @@ def msg_process(msg):
         logging.debug(f'##Msg reçu: {val}')
 
 
+def send_msg(timestamp, value, producer, args):
+    dico = {'timestamp': timestamp, 'pseudo': value[0], 'tweet': value[1]}
+    result = json.dumps(dico)
+    producer.produce(args.topic, key=args.filename, value=result, callback=acked)
+
+
 def main():
     c = Consumer({
         'bootstrap.servers': kafka_bootstrap_servers,
@@ -46,7 +52,6 @@ if __name__ == "__main__":
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
     inf_module_name = os.getenv('INFERENCE_PYTHON_FILE')
     inf_module_model_name = os.getenv('INFERENCE_PYTHON_MODEL')
-    inf_classifier = os.getenv('INFERENCE_CLASSIFIER')
     inf_classifier_name = os.getenv('INFERENCE_CLASSIFIER_NAME')
 
     kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
@@ -55,7 +60,6 @@ if __name__ == "__main__":
 
     logging.debug(f'##Kafka group ID: {kafka_group_name}')
     logging.debug(f'##Kafka topic: {kafka_topic}')
-    logging.debug(f'##Inference classifier bool: {type(inf_classifier)}, {inf_classifier}')
     logging.debug(f'##Inference classifier name: {inf_classifier_name}')
 
     # inference = importlib.import_module(inf_module_name)
@@ -64,7 +68,8 @@ if __name__ == "__main__":
 
     inference = __import__(inf_module_name)
 
-    if inf_classifier:
+    if inf_classifier_name != 'None':
+        logging.debug(f'## Il y a une classe en plus')
         locals()[inf_classifier_name] = getattr(inference, inf_classifier_name)
 
     model_path = "./" + inf_module_model_name

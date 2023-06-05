@@ -35,8 +35,8 @@ services:
       KAFKA_GROUP_NAME: group1
       INFERENCE_PYTHON_FILE: offense_inference
       INFERENCE_PYTHON_MODEL: model_offense_inference.pth.tar
-      INFERENCE_CLASSIFIER: false
-      INFERENCE_CLASSIFIER_NAME: predict
+      #INFERENCE_CLASSIFIER: false
+      INFERENCE_CLASSIFIER_NAME: None
     restart: "always"
     
   consumer_sentiment:
@@ -52,6 +52,6 @@ services:
       KAFKA_GROUP_NAME: group2
       INFERENCE_PYTHON_FILE: sentiment_inference
       INFERENCE_PYTHON_MODEL: model_sentiment_inference.pth
-      INFERENCE_CLASSIFIER: true
+      #INFERENCE_CLASSIFIER: true
       INFERENCE_CLASSIFIER_NAME: SentimentClassifier
     restart: "always"
