@@ -10,7 +10,7 @@ TOPIC_FOR_SEND = "inner_topic"
 
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
-    result = inference.predict(model, val['tweet'])
+    result = int(inference.predict(model, val['tweet']))
     val[inf_module_name.split('_')[0]] = result
     with open("result.txt", "a") as f:
         f.write(str(val) + "\n")
@@ -22,16 +22,21 @@ def msg_process(msg):
 def acked(err, msg):
     if err is not None:
         logging.debug(f'##Failed to deliver message: {err}')
-        #print("Failed to deliver message: %s: %s" % (str(msg.value()), str(err)))
     else:
-        #print("Topic: %s, Partition: %s, Message produced: %s, " % (str(msg.topic()), str(msg.partition()), str(msg.value())))
         logging.debug(f'##Message envoyé: {str(msg.topic()), str(msg.partition()), str(msg.value())}')
         
 def res_send(value,producer):
     
-    #result = json.dumps(value)
-    #producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
-    pass
+    try:
+        result = json.dumps(value)
+    except Exception as e:
+        logging.debug(f'##Error while dumping message: {e}')
+
+    try:
+        producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
+    except Exception as e:
+        logging.debug(f'##Error when loading the producer: {e}')
+   
 
 
 def main():
@@ -63,11 +68,11 @@ def main():
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
                 val = msg_process(msg)
-                #try: 
-                #    res_send(val,producer_for_res )
-                #    producer_for_res.flush()
-                #except Exception as e:
-                #    logging.debug(f'Error while sending message: {e}')
+                try: 
+                    res_send(val,producer_for_res )
+                    producer_for_res.flush()
+                except Exception as e:
+                    logging.debug(f'Error while sending message: {e}')
                 
     except KeyboardInterrupt:
         pass
