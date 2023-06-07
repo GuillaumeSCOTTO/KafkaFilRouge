@@ -29,16 +29,16 @@ def acked(err, msg):
         
 def res_send(value,producer):
     
-    result = json.dumps(value)
-    producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
+    #result = json.dumps(value)
+    #producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
+    pass
 
 
 def main():
 
     # On créé l'instance producer pour envoyer les résultats qui seront calculés
-    conf = {'bootstrap.servers': "kafka:9092",
-            'client.id': socket.gethostname()}
-    producer_for_res = Producer(conf)
+    #producer_for_res = Producer({'bootstrap.servers': "kafka:9092",
+    #        'client.id': socket.gethostname()})
 
 
     c = Consumer({
@@ -63,11 +63,11 @@ def main():
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
                 val = msg_process(msg)
-                try: 
-                    res_send(val,producer_for_res )
-                    producer_for_res.flush()
-                except Exception as e:
-                    logging.debug(f'Error while sending message: {e}')
+                #try: 
+                #    res_send(val,producer_for_res )
+                #    producer_for_res.flush()
+                #except Exception as e:
+                #    logging.debug(f'Error while sending message: {e}')
                 
     except KeyboardInterrupt:
         pass
