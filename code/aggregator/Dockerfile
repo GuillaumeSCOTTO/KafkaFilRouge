@@ -13,7 +13,6 @@ COPY code/producer/requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY data/data.csv .
-COPY code/producer/producer.py .
+COPY code/producer/aggregation.py .
 
-CMD ["python", "producer.py"]
+CMD ["python", "aggregation.py"]

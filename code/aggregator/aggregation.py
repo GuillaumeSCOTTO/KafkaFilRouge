@@ -6,7 +6,7 @@ import logging
 
 FILENAME_RESULTS = os.getenv('FILENAME_RESULTS')
 KEYS = os.getenv('KEYS').split(',')
-NB_CONSUMERS = int(os.getenv('NB_CONSUMERS'))
+NB_CONSUMERS = os.getenv('NB_CONSUMERS')
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
@@ -36,8 +36,10 @@ def msg_process(msg, dico):
 def main():
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
         'group.id': KAFKA_GROUP_NAME})
+    logging.debug(f'Serveur Kafka : {KAFKA_BOOTSTRAP_SERVERS}')
 
     c.subscribe([KAFKA_AGGREGATION_TOPIC])
+    logging.debug(f'Topic Kafka : {KAFKA_AGGREGATION_TOPIC}')
 
     dico = {}
 

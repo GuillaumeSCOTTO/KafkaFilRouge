@@ -22,8 +22,23 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,LOCAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
 
+  aggregator:
+    build:
+      dockerfile: ./code/aggregator/Dockerfile
+    container_name: aggregator
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
+      KAFKA_AGGREGATION_TOPIC: "${AGGREGATION_TOPIC}"
+      KAFKA_GROUP_NAME: group1
+      FILENAME_RESULTS: results.txt
+      KEYS: "${KEYS}"
+      NB_CONSUMERS: "${NB_CONSUMERS}"
+    restart: "always"
+
   consumer_offense:
-    build: 
+    build:
       context: ./code
       dockerfile: ./consumer_offense/Dockerfile
     container_name: consumer_offense
@@ -33,14 +48,14 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
       KAFKA_TOPIC: "${STREAM_TOPIC}"
       KAFKA_AGGREGATION_TOPIC: "${AGGREGATION_TOPIC}"
-      KAFKA_GROUP_NAME: group1
+      KAFKA_GROUP_NAME: group2
       INFERENCE_PYTHON_FILE: offense_inference
       INFERENCE_PYTHON_MODEL: model_offense_inference.pth.tar
       INFERENCE_CLASSIFIER_NAME: None
     restart: "always"
-    
+
   consumer_sentiment:
-    build: 
+    build:
       context: ./code
       dockerfile: ./consumer_sentiment/Dockerfile
     container_name: consumer_sentiment
@@ -50,8 +65,23 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
       KAFKA_TOPIC: "${STREAM_TOPIC}"
       KAFKA_AGGREGATION_TOPIC: "${AGGREGATION_TOPIC}"
-      KAFKA_GROUP_NAME: group2
+      KAFKA_GROUP_NAME: group3
       INFERENCE_PYTHON_FILE: sentiment_inference
       INFERENCE_PYTHON_MODEL: model_sentiment_inference.pth
       INFERENCE_CLASSIFIER_NAME: SentimentClassifier
+    restart: "always"
+
+  producer:
+    build:
+      dockerfile: ./code/producer/Dockerfile
+    container_name: producer
+    depends_on:
+      - consumer_sentiment
+      - consumer_offense
+      - aggregator
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
+      KAFKA_TOPIC: "${STREAM_TOPIC}"
+      FILENAME_DATA: data.csv
+      SPEED: "${SPEED}"
     restart: "always"
