@@ -4,6 +4,9 @@ docker-compose up
 Le Producer doit être lancé en ligne de commande : 
 python code/producer/producer.py data/data.csv my_stream 10
 
+L'aggrégateur doit être lancé en ligne de commande :
+python code/producer/aggregation.py
+
 Le projet contient 4 conteneurs :
 - Zookeeper
 - Kafka

@@ -1,0 +1,6 @@
+{'pseudo': '_TheSpecialOne_', 'tweet': "@switchfoot http://twitpic.com/2y1zl - Awww, that's a bummer.  You shoulda got David Carr of Third Day to do it. ;D", 'offense': 0, 'sentiment': 0}
+{'pseudo': 'scotthamilton', 'tweet': "is upset that he can't update his Facebook by texting it... and might cry as a result  School today also. Blah!", 'offense': 0, 'sentiment': 0}
+{'pseudo': 'mattycus', 'tweet': '@Kenichan I dived many times for the ball. Managed to save 50%  The rest go out of bounds', 'offense': 0, 'sentiment': 0}
+{'pseudo': 'ElleCTF', 'tweet': 'my whole body feels itchy and like its on fire ', 'offense': 1, 'sentiment': 0}
+{'pseudo': 'Karoli', 'tweet': "@nationwideclass no, it's not behaving at all. i'm mad. why am i here? because I can't see you all over there. ", 'offense': 0, 'sentiment': 0}
+{'pseudo': 'joy_wolf', 'tweet': '@Kwesidei not the whole crew ', 'offense': 0, 'sentiment': 0}
