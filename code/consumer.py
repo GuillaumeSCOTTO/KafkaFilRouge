@@ -3,8 +3,6 @@ import os
 import json
 import logging
 
-TOPIC_FOR_SEND = "inner_topic"
-
 
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
@@ -25,7 +23,7 @@ def acked(err, msg):
 
 def res_send(value, producer):
     result = json.dumps(value)
-    producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
+    producer.produce(kafka_aggregation_topic, value=result, callback=acked)
 
 
 def main():
@@ -75,6 +73,7 @@ if __name__ == "__main__":
 
     kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
     kafka_topic = os.getenv('KAFKA_TOPIC')
+    kafka_aggregation_topic = os.getenv('KAFKA_AGGREGATION_TOPIC')
     kafka_group_name = os.getenv('KAFKA_GROUP_NAME')
 
     logging.debug(f'##Kafka group ID: {kafka_group_name}')
