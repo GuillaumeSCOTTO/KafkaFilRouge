@@ -2,15 +2,13 @@ from confluent_kafka import Consumer, KafkaError, Producer
 import os
 import json
 import logging
-import socket
-
-# import importlib
 
 TOPIC_FOR_SEND = "inner_topic"
 
+
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
-    result = inference.predict(model, val['tweet'])
+    result = int(inference.predict(model, val['tweet']))
     val[inf_module_name.split('_')[0]] = result
     with open("result.txt", "a") as f:
         f.write(str(val) + "\n")
@@ -18,43 +16,31 @@ def msg_process(msg):
     return val
 
 
-
 def acked(err, msg):
     if err is not None:
         logging.debug(f'##Failed to deliver message: {err}')
-        #print("Failed to deliver message: %s: %s" % (str(msg.value()), str(err)))
     else:
-        #print("Topic: %s, Partition: %s, Message produced: %s, " % (str(msg.topic()), str(msg.partition()), str(msg.value())))
         logging.debug(f'##Message envoyé: {str(msg.topic()), str(msg.partition()), str(msg.value())}')
-        
-def res_send(value,producer):
-    
+
+
+def res_send(value, producer):
     result = json.dumps(value)
     producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
 
 
-def send_msg(timestamp, value, producer, args):
-    dico = {'timestamp': timestamp, 'pseudo': value[0], 'tweet': value[1]}
-    result = json.dumps(dico)
-    producer.produce(args.topic, key=args.filename, value=result, callback=acked)
-
-
 def main():
-
     # On créé l'instance producer pour envoyer les résultats qui seront calculés
-    conf = {'bootstrap.servers': "kafka:9092",
-            'client.id': socket.gethostname()}
-    producer_for_res = Producer(conf)
-
+    p = Producer({'bootstrap.servers': kafka_bootstrap_servers})
+    logging.debug('Producer done')
 
     c = Consumer({
         'bootstrap.servers': kafka_bootstrap_servers,
         'group.id': kafka_group_name
     })
-
-    logging.debug('Connexion done')
+    logging.debug('Consumer done')
 
     c.subscribe([kafka_topic])
+    logging.debug('Subscription done')
 
     try:
         while True:
@@ -69,12 +55,12 @@ def main():
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
                 val = msg_process(msg)
-                try: 
-                    res_send(val,producer_for_res )
-                    producer_for_res.flush()
+                try:
+                    res_send(val, p)
+                    p.flush()
                 except Exception as e:
                     logging.debug(f'Error while sending message: {e}')
-                
+
     except KeyboardInterrupt:
         pass
     finally:
@@ -94,10 +80,6 @@ if __name__ == "__main__":
     logging.debug(f'##Kafka group ID: {kafka_group_name}')
     logging.debug(f'##Kafka topic: {kafka_topic}')
     logging.debug(f'##Inference classifier name: {inf_classifier_name}')
-
-    # inference = importlib.import_module(inf_module_name)
-    # model_path = "./" + inf_module_model_name
-    # model = inference.load_model(model_path)
 
     inference = __import__(inf_module_name)
 

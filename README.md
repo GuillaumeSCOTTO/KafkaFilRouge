@@ -16,4 +16,9 @@ docker rm $(docker ps -a -f status=exited -q)
 Delete all images :
 docker rmi $(docker images -a -q)
 
+Access VM : 
+ssh ubuntu@137.194.211.107
+- Activate the venv for Python
+	source test/bin/activate
+
 
