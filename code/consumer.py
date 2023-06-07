@@ -37,8 +37,8 @@ def res_send(value,producer):
 def main():
 
     # On créé l'instance producer pour envoyer les résultats qui seront calculés
-    #producer_for_res = Producer({'bootstrap.servers': "kafka:9092",
-    #        'client.id': socket.gethostname()})
+    producer_for_res = Producer({'bootstrap.servers': "kafka:29092",
+            'client.id': socket.gethostname()})
 
 
     c = Consumer({
