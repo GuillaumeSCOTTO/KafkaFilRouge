@@ -17,11 +17,7 @@ INFERENCE_PYTHON_MODEL = os.getenv('INFERENCE_PYTHON_MODEL')
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
     result = int(inference.predict(model, val['tweet']))
-<<<<<<< HEAD
-    val[inf_module_name.split('_')[0]] = result
-=======
     val[INFERENCE_PYTHON_FILE.split('_')[0]] = result
->>>>>>> antoine
     with open("result.txt", "a") as f:
         f.write(str(val) + "\n")
         logging.debug(f'## Msg reçu: {val}')
@@ -30,24 +26,6 @@ def msg_process(msg):
 
 def acked(err, msg):
     if err is not None:
-<<<<<<< HEAD
-        logging.debug(f'##Failed to deliver message: {err}')
-    else:
-        logging.debug(f'##Message envoyé: {str(msg.topic()), str(msg.partition()), str(msg.value())}')
-        
-def res_send(value,producer):
-    
-    try:
-        result = json.dumps(value)
-    except Exception as e:
-        logging.debug(f'##Error while dumping message: {e}')
-
-    try:
-        producer.produce(TOPIC_FOR_SEND, value=result, callback=acked)
-    except Exception as e:
-        logging.debug(f'##Error when loading the producer: {e}')
-   
-=======
         logging.debug(f'## Failed to deliver message: {err}')
     else:
         logging.debug(f'## Message envoyé: {str(msg.topic()), str(msg.partition()), str(msg.value())}')
@@ -56,19 +34,12 @@ def res_send(value,producer):
 def res_send(value, producer):
     result = json.dumps(value)
     producer.produce(KAFKA_AGGREGATION_TOPIC, value=result, callback=acked)
->>>>>>> antoine
 
 
 def main():
     # On créé l'instance producer pour envoyer les résultats qui seront calculés
-<<<<<<< HEAD
-    producer_for_res = Producer({'bootstrap.servers': "kafka:29092",
-            'client.id': socket.gethostname()})
-
-=======
     p = Producer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS})
     logging.debug('## Producer done')
->>>>>>> antoine
 
     c = Consumer({
         'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
