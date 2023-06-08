@@ -1,8 +1,0 @@
-DEBUG:root:Speed : None
-DEBUG:root:Speed2 : 10
-DEBUG:root:Nom du fichier de données : None
-DEBUG:root:Vitesse de production des données : 10
-DEBUG:root:Kafka bootstrap servers : None
-DEBUG:root:Kafka topic sur lequel sont postées les données : None
-DEBUG:root:Producer started
-DEBUG:root:Chemin du csv : (<class 'NoneType'>, None)

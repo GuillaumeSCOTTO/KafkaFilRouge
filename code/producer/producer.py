@@ -9,9 +9,7 @@ from confluent_kafka import Producer
 
 
 FILENAME_DATA = os.getenv('FILENAME_DATA')
-SPEED = os.getenv('SPEED')
-SPEED = int(SPEED)
-logging.debug(f"Speed : {SPEED}", type(SPEED))
+SPEED = int(os.getenv('SPEED'))
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_TOPIC = os.getenv('KAFKA_TOPIC')
@@ -42,7 +40,6 @@ def send_msg(timestamp, value, producer):
 
 
 def main():
-
     conf = {'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS}
     producer = Producer(conf)
     logging.debug("Producer started")
@@ -71,12 +68,8 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(filename='logs_producer.log', encoding='utf-8', level=logging.DEBUG)
 
-    logging.debug(f"Speed : {os.getenv('SPEED')}")
-    logging.debug(f"Type speed : {type(os.getenv('SPEED'))}")
-    #logging.debug(f"Speed2 : {SPEED}")
     logging.debug(f"Nom du fichier de données : {FILENAME_DATA}")
     logging.debug(f"Vitesse de production des données : {SPEED}")
     logging.debug(f"Kafka bootstrap servers : {KAFKA_BOOTSTRAP_SERVERS}")
