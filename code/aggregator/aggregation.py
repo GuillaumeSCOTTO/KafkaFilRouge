@@ -2,11 +2,12 @@ from confluent_kafka import Consumer, KafkaError
 import json
 import os
 import logging
+from elasticsearch import Elasticsearch
 
 
 FILENAME_RESULTS = os.getenv('FILENAME_RESULTS')
 KEYS = os.getenv('KEYS').split(',')
-NB_CONSUMERS = os.getenv('NB_CONSUMERS')
+NB_CONSUMERS = int(os.getenv('NB_CONSUMERS'))
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
@@ -34,12 +35,23 @@ def msg_process(msg, dico):
 
 
 def main():
+
+    
+    # Establish a connection to Elasticsearch
+    #es = Elasticsearch(hosts=['172.21.0.3:9200'])  # Assuming Elasticsearch is running in the same Docker network
+
+    # Check if the connection is successful
+    #if es.ping():
+     #   logging.debug("Connected to Elasticsearch")
+        #print("Connected to Elasticsearch")
+   # else:
+    #    logging.debug("Unable to connect to Elasticsearch")
+    #    print("Unable to connect to Elasticsearch")
+
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
         'group.id': KAFKA_GROUP_NAME})
-    logging.debug(f'Serveur Kafka : {KAFKA_BOOTSTRAP_SERVERS}')
 
     c.subscribe([KAFKA_AGGREGATION_TOPIC])
-    logging.debug(f'Topic Kafka : {KAFKA_AGGREGATION_TOPIC}')
 
     dico = {}
 
@@ -71,6 +83,6 @@ if __name__ == "__main__":
     logging.debug(f"Nombre de métadonnées : {NB_CONSUMERS}")
     logging.debug(f"Kafka bootstrap servers : {KAFKA_BOOTSTRAP_SERVERS}")
     logging.debug(f"Kafka groupe : {KAFKA_GROUP_NAME}")
-    logging.debug(f"Kafka topic sur lequel sont postées les données aggrégées: {KAFKA_AGGREGATION_TOPIC}")
+    logging.debug(f"Kafka aggregation TOPIC: {KAFKA_AGGREGATION_TOPIC}")
 
     main()

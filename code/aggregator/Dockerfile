@@ -9,10 +9,10 @@ RUN apt-get update && \
   ./configure --prefix=/usr/ && make && make install && \
   cd ../ && rm -rf librdkafka
 
-COPY code/producer/requirements.txt .
+COPY code/aggregator/requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY code/producer/aggregation.py .
+COPY code/aggregator/aggregation.py .
 
 CMD ["python", "aggregation.py"]
