@@ -15,48 +15,57 @@ KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
 KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
 
 
-def msg_process(msg, dico):
+
+def msg_process(client, msg, dico):
     val = json.loads(msg.value().decode('utf-8'))
+
     if val['timestamp'] not in dico.keys():
         dico[val['timestamp']] = {key: value for key, value in val.items() if key != 'timestamp'}
+        #logging.debug(f'##DICO 2: {dico}')
     else:
         if len(dico[val['timestamp']]) == len(KEYS) + NB_CONSUMERS - 2:
             final_json = dico[val['timestamp']]
             del dico[val['timestamp']]
-            for key in val.keys():
-                if key not in KEYS:
-                    final_json[key] = val[key]
-                    with open(FILENAME_RESULTS, "a") as f:
-                        f.write(str(final_json) + "\n")
-                    logging.debug(f'##Msg reçu: {final_json}')
-        else:
-            for key in val.keys():
-                if key not in KEYS:
-                    dico[val['timestamp']][key] = val[key]
-
-
-"""
-def msg_process(msg, dico):
-    val = json.loads(msg.value().decode('utf-8'))
-    if val['timestamp'] not in dico.keys():
-        dico[val['timestamp']] = {key: value for key, value in val.items()}
-    else:
-        if len(dico[val['timestamp']]) == len(KEYS) + NB_CONSUMERS - 2:
-            final_json = dico[val['timestamp']]
-            del dico[val['timestamp']]
+            #logging.debug(f'##DICO APRES DEL: {dico}')
             for key in val.keys():
                 if key not in KEYS:
                     final_json[key] = val[key]
             final_json['timestamp'] = val['timestamp']
+            # Call the function to create the index
+            #create_index_with_timestamp(client, json.dumps(final_json), "pfr")
             with open(FILENAME_RESULTS, "a") as f:
-                f.write(str(final_json) + "\n")
-            logging.debug(f'##Msg reçu: {final_json}')
+                #logging.debug(f'##final_json dans le with: {final_json}')
+                f.write(json.dumps(final_json) + "\n")
+
+            #logging.debug(f'##Msg reçu: {final_json}')
         else:
             for key in val.keys():
                 if key not in KEYS:
                     dico[val['timestamp']][key] = val[key]
 
-"""
+
+
+def create_index_with_timestamp(client, data, index_name):
+    for item in data:
+        logging.debug(f'##item: {item}')
+        body = {
+            'timestamp': item['timestamp'],
+            'pseudo': item['pseudo'],
+            'tweet': item['tweet'],
+            'offense': item['offense'],
+            'sentiment': item['sentiment']   
+        }
+
+        # Index the document with the timestamp as the index
+        response = client.index(index=index_name, body=body, id=item['timestamp'])
+        if response['result'] == 'created':
+            print(f"Document indexed with timestamp: {item['timestamp']}")
+        else:
+            print(f"Failed to index document with timestamp: {item['timestamp']}")
+
+
+
+
 
 def main():
 
@@ -137,8 +146,26 @@ def main():
     # Delete data in the index to start with a clean slate
     response = client.delete_by_query(index=index_name, body=delete_query)
 
-    # Check the response
-    logging.debug(f"DELETE RESPONSE: {response}")
+
+    # Données à ajouter
+    data = {
+        "pseudo": "Karoli",
+        "tweet": "@nationwideclass no, it's not behaving at all. i'm mad. why am i here? because I can't see you all over there.",
+        "offense": 0,
+        "sentiment": 0
+    }
+
+    # Ajouter les données à Elasticsearch
+    #response = client.index(index=index_name, body=data)
+
+    # Vérifier la réponse
+    #if response["result"] == "created":
+    #    print("Les données ont été ajoutées avec succès à Elasticsearch.")
+    #else:
+    #    print("Erreur lors de l'ajout des données à Elasticsearch.")
+
+        # Check the response
+    #    logging.debug(f"DELETE RESPONSE: {response}")
 
 
 
@@ -161,7 +188,7 @@ def main():
                 else:
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
-                msg_process(msg, dico)
+                msg_process(client, msg, dico)
 
     except KeyboardInterrupt:
         pass
