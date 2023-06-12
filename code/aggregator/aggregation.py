@@ -3,7 +3,8 @@ import json
 import os
 import logging
 from elasticsearch import Elasticsearch
-
+import time ## à rajouter dans le requirements.txt
+import socket
 
 FILENAME_RESULTS = os.getenv('FILENAME_RESULTS')
 KEYS = os.getenv('KEYS').split(',')
@@ -34,19 +35,112 @@ def msg_process(msg, dico):
                     dico[val['timestamp']][key] = val[key]
 
 
+"""
+def msg_process(msg, dico):
+    val = json.loads(msg.value().decode('utf-8'))
+    if val['timestamp'] not in dico.keys():
+        dico[val['timestamp']] = {key: value for key, value in val.items()}
+    else:
+        if len(dico[val['timestamp']]) == len(KEYS) + NB_CONSUMERS - 2:
+            final_json = dico[val['timestamp']]
+            del dico[val['timestamp']]
+            for key in val.keys():
+                if key not in KEYS:
+                    final_json[key] = val[key]
+            final_json['timestamp'] = val['timestamp']
+            with open(FILENAME_RESULTS, "a") as f:
+                f.write(str(final_json) + "\n")
+            logging.debug(f'##Msg reçu: {final_json}')
+        else:
+            for key in val.keys():
+                if key not in KEYS:
+                    dico[val['timestamp']][key] = val[key]
+
+"""
+
 def main():
 
-    
-    # Establish a connection to Elasticsearch
-    #es = Elasticsearch(hosts=['172.21.0.3:9200'])  # Assuming Elasticsearch is running in the same Docker network
 
-    # Check if the connection is successful
-    #if es.ping():
-     #   logging.debug("Connected to Elasticsearch")
-        #print("Connected to Elasticsearch")
-   # else:
-    #    logging.debug("Unable to connect to Elasticsearch")
-    #    print("Unable to connect to Elasticsearch")
+
+    # Define the Elasticsearch host
+    elasticsearch_host = 'elasticsearch'  # Container name of Elasticsearch
+
+    try:
+        elasticsearch_ip = socket.gethostbyname(elasticsearch_host)
+        logging.debug(f"Elasticsearch IP address: {elasticsearch_ip}")
+    except socket.gaierror:
+        logging.debug(f"Failed to resolve Elasticsearch hostname: {elasticsearch_host}")
+
+
+    # Create the Elasticsearch client
+    client = Elasticsearch(hosts=["http://" + elasticsearch_ip + ":9200"])
+
+    # Initialize the response variable
+    response = None
+
+    # Keep checking the connection until a response is received
+    while response is None:
+        try:
+            # Check the connection by retrieving the cluster information
+            response = client.cluster.health()
+            logging.debug(f"CLUSTER RESPONSE HEALTH: {response}")
+        except Exception as e:
+            # Handle any exceptions and log the error
+            logging.error(f"Error connecting to Elasticsearch, trying again to connect: {e}")
+            time.sleep(1)  # Wait for 1 second before retrying
+
+
+        # Define the delete query
+    delete_query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+
+    settings = {
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+    },
+    "mappings": {
+        "properties": {
+            "timestamp": {
+                "type": "date"
+            },
+            "pseudo": {
+                "type": "keyword"
+            },
+            "tweet": {
+                "type": "text"
+            },
+            "offense": {
+                "type": "integer"
+            },
+            "sentiment": {
+                "type": "integer"
+            }
+        }
+    }
+    }
+
+    # Define the index name
+    index_name = "pfr"
+
+    # Create or override the index
+    #response = client.indices.create(index=index_name, body=settings, ignore=400, request_timeout=30, create=True)
+    #if response and response.get("acknowledged"):
+    #    logging.debug(f"Index '{index_name}' created or overridden successfully.")
+    #else:
+    #    logging.debug(f"Failed to create or override index '{index_name}'.")
+
+    
+    # Delete data in the index to start with a clean slate
+    response = client.delete_by_query(index=index_name, body=delete_query)
+
+    # Check the response
+    logging.debug(f"DELETE RESPONSE: {response}")
+
+
 
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
         'group.id': KAFKA_GROUP_NAME})
