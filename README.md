@@ -13,7 +13,7 @@ puis
 
 cat results.txt
 
-Le projet contient 7 conteneurs :
+Le projet contient 8 conteneurs :
 - Zookeeper
 - Kafka
 - Un premier extracteur de métadonnée (offenseval)
@@ -21,6 +21,9 @@ Le projet contient 7 conteneurs :
 - Un producer qui envoie les données
 - Un aggregator qui aggrège les résultats des modèles (= les métadonnées)
 - Un elasticsearch qui va stocker les données
+- Un kibana pour visualiser les doonnées
 =======
 
+
+accès Kibana (le chargement est long) : http://localhost:5601/
 ##Access VM : ssh ubuntu@137.194.211.107
