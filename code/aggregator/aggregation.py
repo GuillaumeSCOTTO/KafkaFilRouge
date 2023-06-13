@@ -16,7 +16,7 @@ KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
 
 
 
-def msg_process(client, msg, dico):
+def msg_process(client, msg, dico, index_name):
     val = json.loads(msg.value().decode('utf-8'))
 
     if val['timestamp'] not in dico.keys():
@@ -32,7 +32,8 @@ def msg_process(client, msg, dico):
                     final_json[key] = val[key]
             final_json['timestamp'] = val['timestamp']
             # Call the function to create the index
-            #create_index_with_timestamp(client, json.dumps(final_json), "pfr")
+            logging.debug(f'##json dumps avant intégration: {json.dumps(final_json)}')
+            import_data_into_ELK(client, final_json, index_name)
             with open(FILENAME_RESULTS, "a") as f:
                 logging.debug(f'##Data reçue: {final_json}')
                 f.write(json.dumps(final_json) + "\n")
@@ -45,24 +46,22 @@ def msg_process(client, msg, dico):
 
 
 
-def create_index_with_timestamp(client, data, index_name):
+def import_data_into_ELK(client, data, index_name):
     logging.debug(f'##data: {data}')
-    for item in data:
-        logging.debug(f'##item: {item}')
-        body = {
-            'timestamp': item['timestamp'],
-            'pseudo': item['pseudo'],
-            'tweet': item['tweet'],
-            'offense': item['offense'],
-            'sentiment': item['sentiment']   
-        }
+    body = {
+        'timestamp': data['timestamp'],
+        'pseudo': data['pseudo'],
+        'tweet': data['tweet'],
+        'offense': data['offense'],
+        'sentiment': data['sentiment']   
+    }
 
-        # Index the document with the timestamp as the index
-        response = client.index(index=index_name, body=body, id=item['timestamp'])
-        if response['result'] == 'created':
-            print(f"Document indexed with timestamp: {item['timestamp']}")
-        else:
-            print(f"Failed to index document with timestamp: {item['timestamp']}")
+    # Index the document with the timestamp as the index
+    response = client.index(index=index_name, body=body, id=data['timestamp'])
+    if response['result'] == 'created':
+        print(f"Document indexed with timestamp: {data['timestamp']}")
+    else:
+        print(f"Failed to index document with timestamp: {data['timestamp']}")
 
 
 
@@ -125,14 +124,11 @@ def main():
         }
     }
     }
-
-    # Define the index name
     index_name = "pfr"
 
-   
     try:
         # Create the index with the settings and mappings above if doesn't already exist
-        response = client.indices.create(index=index_name, body=settings)
+        response = client.indices.create(index=index_name, body=settings, ignore=400)
         logging.debug(f"INDEX CREATED: {response}")
     except Exception as e:
         logging.error(f"Error creating the index: {e}")
@@ -164,7 +160,7 @@ def main():
                 else:
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
-                msg_process(client, msg, dico)
+                msg_process(client, msg, dico, index_name)
 
     except KeyboardInterrupt:
         pass
