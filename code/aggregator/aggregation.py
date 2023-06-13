@@ -46,6 +46,7 @@ def msg_process(client, msg, dico):
 
 
 def create_index_with_timestamp(client, data, index_name):
+    logging.debug(f'##data: {data}')
     for item in data:
         logging.debug(f'##item: {item}')
         body = {
@@ -97,7 +98,7 @@ def main():
             # Handle any exceptions and log the error
             logging.error(f"Error connecting to Elasticsearch, trying again to connect: {e}")
             time.sleep(1)  # Wait for 1 second before retrying
-
+    logging.debug(f"Connected to Elasticsearch successfully.")
 
         # Define the delete query
     delete_query = {
@@ -114,10 +115,10 @@ def main():
     "mappings": {
         "properties": {
             "timestamp": {
-                "type": "date"
+                "type": "text"
             },
             "pseudo": {
-                "type": "keyword"
+                "type": "text"
             },
             "tweet": {
                 "type": "text"
@@ -136,19 +137,21 @@ def main():
     index_name = "pfr"
 
     # Create or override the index
-    #response = client.indices.create(index=index_name, body=settings, ignore=400, request_timeout=30, create=True)
-    #if response and response.get("acknowledged"):
-    #    logging.debug(f"Index '{index_name}' created or overridden successfully.")
-    #else:
-    #    logging.debug(f"Failed to create or override index '{index_name}'.")
+    response = client.indices.create(index=index_name, body=settings, ignore=400)
+    logging.debug(f"CREATE RESPONSE: {response}")
+    if response and response.get("acknowledged"):
+        logging.debug(f"Index '{index_name}' created or overridden successfully.")
+    else:
+        logging.debug(f"Failed to create or override index '{index_name}'.")
 
     
     # Delete data in the index to start with a clean slate
-    response = client.delete_by_query(index=index_name, body=delete_query)
-
+    #response = client.delete_by_query(index=index_name, body=delete_query)
+    #logging.debug(f"DELETE RESPONSE: {response}")
 
     # Données à ajouter
     data = {
+        "timestamp": "1467814883",
         "pseudo": "Karoli",
         "tweet": "@nationwideclass no, it's not behaving at all. i'm mad. why am i here? because I can't see you all over there.",
         "offense": 0,
