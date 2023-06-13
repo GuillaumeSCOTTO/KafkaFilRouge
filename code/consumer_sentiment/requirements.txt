@@ -3,4 +3,4 @@
 confluent-kafka==1.7.0
 transformers==4.28.1
 numpy==1.24.2
-torch==1.13.1
+torch==1.13.1 

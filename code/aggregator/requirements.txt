@@ -1,0 +1,4 @@
+confluent-kafka==1.7.0
+elasticsearch>=7.9.2
+docker==4.4.4
+
