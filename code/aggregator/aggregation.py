@@ -34,7 +34,7 @@ def msg_process(client, msg, dico):
             # Call the function to create the index
             #create_index_with_timestamp(client, json.dumps(final_json), "pfr")
             with open(FILENAME_RESULTS, "a") as f:
-                #logging.debug(f'##final_json dans le with: {final_json}')
+                logging.debug(f'##Data reçue: {final_json}')
                 f.write(json.dumps(final_json) + "\n")
 
             #logging.debug(f'##Msg reçu: {final_json}')
@@ -100,13 +100,6 @@ def main():
             time.sleep(1)  # Wait for 1 second before retrying
     logging.debug(f"Connected to Elasticsearch successfully.")
 
-        # Define the delete query
-    delete_query = {
-        "query": {
-            "match_all": {}
-        }
-    }
-
     settings = {
     "settings": {
         "number_of_shards": 1,
@@ -136,41 +129,21 @@ def main():
     # Define the index name
     index_name = "pfr"
 
-    # Create or override the index
-    response = client.indices.create(index=index_name, body=settings, ignore=400)
-    logging.debug(f"CREATE RESPONSE: {response}")
-    if response and response.get("acknowledged"):
-        logging.debug(f"Index '{index_name}' created or overridden successfully.")
-    else:
-        logging.debug(f"Failed to create or override index '{index_name}'.")
-
-    
-    # Delete data in the index to start with a clean slate
-    #response = client.delete_by_query(index=index_name, body=delete_query)
-    #logging.debug(f"DELETE RESPONSE: {response}")
-
-    # Données à ajouter
-    data = {
-        "timestamp": "1467814883",
-        "pseudo": "Karoli",
-        "tweet": "@nationwideclass no, it's not behaving at all. i'm mad. why am i here? because I can't see you all over there.",
-        "offense": 0,
-        "sentiment": 0
-    }
-
-    # Ajouter les données à Elasticsearch
-    #response = client.index(index=index_name, body=data)
-
-    # Vérifier la réponse
-    #if response["result"] == "created":
-    #    print("Les données ont été ajoutées avec succès à Elasticsearch.")
-    #else:
-    #    print("Erreur lors de l'ajout des données à Elasticsearch.")
-
-        # Check the response
-    #    logging.debug(f"DELETE RESPONSE: {response}")
-
-
+   
+    try:
+        # Create the index with the settings and mappings above if doesn't already exist
+        response = client.indices.create(index=index_name, body=settings)
+        logging.debug(f"INDEX CREATED: {response}")
+    except Exception as e:
+        logging.error(f"Error creating the index: {e}")
+        # If the index already exists, delete what's in it
+        delete_query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+        response = client.delete_by_query(index=index_name, body=delete_query)
+        logging.debug(f"DELETE RESPONSE: {response}")
 
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
         'group.id': KAFKA_GROUP_NAME})
