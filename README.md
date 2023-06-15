@@ -24,6 +24,21 @@ Le projet contient 8 conteneurs :
 - Un kibana pour visualiser les doonnées
 =======
 
+requête pour lire les données de l'index "pfr" :
+
+curl -XGET "http://localhost:9200/pfr/_search?pretty=true" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
+'
+remplacer localhost par l'adresse IP de elastic si reqûete faite dans un conteneur
+
+requête pour lire un document par son id (timestamp) : 
+
+curl -XGET "http://localhost:9200/pfr/_doc/{document_id}?pretty=true"
+
 
 accès Kibana (le chargement est long) : http://localhost:5601/
 ##Access VM : ssh ubuntu@137.194.211.107

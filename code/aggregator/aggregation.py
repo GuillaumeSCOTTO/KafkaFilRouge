@@ -13,10 +13,10 @@ NB_CONSUMERS = int(os.getenv('NB_CONSUMERS'))
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
 KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
+ELK_INDEX_NAME = os.getenv('ELK_INDEX_NAME')
 
 
-
-def msg_process(client, msg, dico, index_name):
+def msg_process(client, msg, dico):
     val = json.loads(msg.value().decode('utf-8'))
 
     if val['timestamp'] not in dico.keys():
@@ -33,7 +33,7 @@ def msg_process(client, msg, dico, index_name):
             final_json['timestamp'] = val['timestamp']
             # Call the function to create the index
             logging.debug(f'##json dumps avant intégration: {json.dumps(final_json)}')
-            import_data_into_ELK(client, final_json, index_name)
+            import_data_into_ELK(client, final_json)
             with open(FILENAME_RESULTS, "a") as f:
                 logging.debug(f'##Data reçue: {final_json}')
                 f.write(json.dumps(final_json) + "\n")
@@ -46,7 +46,7 @@ def msg_process(client, msg, dico, index_name):
 
 
 
-def import_data_into_ELK(client, data, index_name):
+def import_data_into_ELK(client, data):
     logging.debug(f'##data: {data}')
     body = {
         'timestamp': data['timestamp'],
@@ -57,7 +57,7 @@ def import_data_into_ELK(client, data, index_name):
     }
 
     # Index the document with the timestamp as the index
-    response = client.index(index=index_name, body=body, id=data['timestamp'])
+    response = client.index(index=ELK_INDEX_NAME, body=body, id=data['timestamp'])
     if response['result'] == 'created':
         print(f"Document indexed with timestamp: {data['timestamp']}")
     else:
@@ -124,11 +124,11 @@ def main():
         }
     }
     }
-    index_name = "pfr"
+    
 
     try:
         # Create the index with the settings and mappings above if doesn't already exist
-        response = client.indices.create(index=index_name, body=settings, ignore=400)
+        response = client.indices.create(index=ELK_INDEX_NAME, body=settings, ignore=400)
         logging.debug(f"INDEX CREATED: {response}")
     except Exception as e:
         logging.error(f"Error creating the index: {e}")
@@ -138,7 +138,7 @@ def main():
                 "match_all": {}
             }
         }
-        response = client.delete_by_query(index=index_name, body=delete_query)
+        response = client.delete_by_query(index=ELK_INDEX_NAME, body=delete_query)
         logging.debug(f"DELETE RESPONSE: {response}")
 
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
@@ -160,7 +160,7 @@ def main():
                 else:
                     logging.debug(f'Error while consuming message: {msg.error()}')
             else:
-                msg_process(client, msg, dico, index_name)
+                msg_process(client, msg, dico)
 
     except KeyboardInterrupt:
         pass
