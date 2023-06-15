@@ -3,6 +3,7 @@ import json
 import os
 import logging
 from elasticsearch import Elasticsearch
+from datetime import datetime
 import time ## à rajouter dans le requirements.txt
 import socket
 
@@ -44,6 +45,8 @@ def msg_process(client, msg, dico):
                 if key not in KEYS:
                     dico[val['timestamp']][key] = val[key]
 
+def compute_date(time):
+    return datetime.fromtimestamp(int(time))
 
 
 def import_data_into_ELK(client, data):
