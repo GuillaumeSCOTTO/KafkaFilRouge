@@ -37,6 +37,7 @@ services:
       KEYS: "${KEYS}"
       NB_CONSUMERS: "${NB_CONSUMERS}"
       ELK_INDEX_NAME: "${ELK_INDEX_NAME}"
+      CONSUMERS_LIST: "${CONSUMERS_LIST}"
     restart: "always"
 
   consumer_offense:
@@ -54,6 +55,7 @@ services:
       INFERENCE_PYTHON_FILE: offense_inference
       INFERENCE_PYTHON_MODEL: model_offense_inference.pth.tar
       INFERENCE_CLASSIFIER_NAME: None
+      RETURN_TYPE : int
     restart: "always"
 
   consumer_sentiment:
@@ -71,6 +73,7 @@ services:
       INFERENCE_PYTHON_FILE: sentiment_inference
       INFERENCE_PYTHON_MODEL: model_sentiment_inference.pth
       INFERENCE_CLASSIFIER_NAME: SentimentClassifier
+      RETURN_TYPE: int
     restart: "always"
 
   producer:

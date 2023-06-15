@@ -14,6 +14,7 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
 KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
 ELK_INDEX_NAME = os.getenv('ELK_INDEX_NAME')
+CONSUMER_LIST = os.getenv('CONSUMER_LIST')
 
 
 def msg_process(client, msg, dico):
@@ -70,7 +71,7 @@ def import_data_into_ELK(client, data):
 def main():
 
 
-
+    
     # Define the Elasticsearch host
     elasticsearch_host = 'elasticsearch'  # Container name of Elasticsearch
 
@@ -142,7 +143,8 @@ def main():
         logging.debug(f"DELETE RESPONSE: {response}")
 
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-        'group.id': KAFKA_GROUP_NAME})
+        'group.id': KAFKA_GROUP_NAME,
+        'auto.offset.reset': 'earliest'})
 
     c.subscribe([KAFKA_AGGREGATION_TOPIC])
 
@@ -177,5 +179,7 @@ if __name__ == "__main__":
     logging.debug(f"Kafka bootstrap servers : {KAFKA_BOOTSTRAP_SERVERS}")
     logging.debug(f"Kafka groupe : {KAFKA_GROUP_NAME}")
     logging.debug(f"Kafka aggregation TOPIC: {KAFKA_AGGREGATION_TOPIC}")
+    logging.debug(f"ELK index name: {ELK_INDEX_NAME}")
+    logging.debug(f"Liste des consumers: {CONSUMER_LIST}")
 
     main()
