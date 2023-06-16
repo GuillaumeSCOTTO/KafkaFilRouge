@@ -12,7 +12,7 @@ KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
 INFERENCE_PYTHON_FILE = os.getenv('INFERENCE_PYTHON_FILE')
 INFERENCE_CLASSIFIER_NAME = os.getenv('INFERENCE_CLASSIFIER_NAME')
 INFERENCE_PYTHON_MODEL = os.getenv('INFERENCE_PYTHON_MODEL')
-
+RETURN_TYPE = os.getenv('RETURN_TYPE')
 
 def msg_process(msg):
     val = json.loads(msg.value().decode('utf-8'))
@@ -43,7 +43,8 @@ def main():
 
     c = Consumer({
         'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-        'group.id': KAFKA_GROUP_NAME
+        'group.id': KAFKA_GROUP_NAME,
+        'auto.offset.reset': 'earliest'
     })
     logging.debug('## Consumer done')
 
