@@ -3,6 +3,7 @@ import json
 import os
 import logging
 from elasticsearch import Elasticsearch
+from datetime import datetime
 import time ## à rajouter dans le requirements.txt
 import socket
 
@@ -15,6 +16,10 @@ KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
 KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
 ELK_INDEX_NAME = os.getenv('ELK_INDEX_NAME')
 CONSUMER_LIST = os.getenv('CONSUMER_LIST')
+
+
+def compute_date(time):
+    return datetime.fromtimestamp(int(time))
 
 
 def msg_process(client, msg, dico):
@@ -32,12 +37,14 @@ def msg_process(client, msg, dico):
                 if key not in KEYS:
                     final_json[key] = val[key]
             final_json['timestamp'] = val['timestamp']
+            logging.debug(f'##json dumps avant intégration: {final_json}')
+            final_json['timestamp'] = compute_date(final_json['timestamp'])
             # Call the function to create the index
-            logging.debug(f'##json dumps avant intégration: {json.dumps(final_json)}')
+            logging.debug(f'##json dumps avant intégration: {final_json}')
             import_data_into_ELK(client, final_json)
-            with open(FILENAME_RESULTS, "a") as f:
-                logging.debug(f'##Data reçue: {final_json}')
-                f.write(json.dumps(final_json) + "\n")
+            #with open(FILENAME_RESULTS, "a") as f:
+                #logging.debug(f'##Data reçue: {final_json}')
+                #f.write(final_json + "\n")
 
             #logging.debug(f'##Msg reçu: {final_json}')
         else:
@@ -108,7 +115,7 @@ def main():
     "mappings": {
         "properties": {
             "timestamp": {
-                "type": "text"
+                "type": "date"
             },
             "pseudo": {
                 "type": "text"
