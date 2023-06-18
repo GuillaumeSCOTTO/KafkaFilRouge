@@ -1,3 +1,5 @@
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/structure.png)
+
 Commande pour lancer le projet : docker-compose up
 
 Le Producer envoie les données automatiquement.
