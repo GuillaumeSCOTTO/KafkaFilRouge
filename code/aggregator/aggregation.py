@@ -4,83 +4,69 @@ import os
 import logging
 from elasticsearch import Elasticsearch
 from datetime import datetime
-import time ## à rajouter dans le requirements.txt
+import time
 import socket
 
-FILENAME_RESULTS = os.getenv('FILENAME_RESULTS')
-KEYS = os.getenv('KEYS').split(',')
-NB_CONSUMERS = int(os.getenv('NB_CONSUMERS'))
+ELK_INDEX_NAME = os.getenv('ELK_INDEX_NAME')
+CONSUMERS = json.loads(os.getenv('CONSUMERS_LIST'))
+INITIAL_FIELDS = json.loads(os.getenv('INITIAL_FIELDS')).keys()
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
-KAFKA_GROUP_NAME = os.getenv('KAFKA_GROUP_NAME')
 KAFKA_AGGREGATION_TOPIC = os.getenv('KAFKA_AGGREGATION_TOPIC')
-ELK_INDEX_NAME = os.getenv('ELK_INDEX_NAME')
-CONSUMER_LIST = os.getenv('CONSUMER_LIST')
 
 
 def compute_date(time):
     return datetime.fromtimestamp(int(time))
+
+
+def define_index_properties():
+    properties = {'timestamp': "date"}
+    for field in INITIAL_FIELDS:
+        properties[field] = 'text'
+    for consumer, typ in CONSUMERS.items():
+        properties[consumer] = typ
+    return properties
 
 
 def msg_process(client, msg, dico):
     val = json.loads(msg.value().decode('utf-8'))
 
-    if val['timestamp'] not in dico.keys():
+    if val['timestamp'] not in dico.keys():  # Première métadonnée de ce tweet reçue
         dico[val['timestamp']] = {key: value for key, value in val.items() if key != 'timestamp'}
-        #logging.debug(f'##DICO 2: {dico}')
     else:
-        if len(dico[val['timestamp']]) == len(KEYS) + NB_CONSUMERS - 2:
+        if len(dico[val['timestamp']]) == len(INITIAL_FIELDS) + len(CONSUMERS) - 1:  # Dernière métadonnée du tweet arrivée
             final_json = dico[val['timestamp']]
             del dico[val['timestamp']]
-            #logging.debug(f'##DICO APRES DEL: {dico}')
             for key in val.keys():
-                if key not in KEYS:
+                if key not in INITIAL_FIELDS and key != 'timestamp':
                     final_json[key] = val[key]
-            final_json['timestamp'] = val['timestamp']
-            logging.debug(f'##json dumps avant intégration: {final_json}')
-            final_json['timestamp'] = compute_date(final_json['timestamp'])
-            # Call the function to create the index
-            logging.debug(f'##json dumps avant intégration: {final_json}')
-            import_data_into_ELK(client, final_json)
-            #with open(FILENAME_RESULTS, "a") as f:
-                #logging.debug(f'##Data reçue: {final_json}')
-                #f.write(final_json + "\n")
-
-            #logging.debug(f'##Msg reçu: {final_json}')
-        else:
+            final_json['timestamp'] = compute_date(val['timestamp'])  # Unix Timestamp to Date
+            import_data_into_ELK(client, final_json)  # On stocke dans Elastic
+        else:  # Autre métadonnée du tweet arrivée mais pas la dernière
             for key in val.keys():
-                if key not in KEYS:
+                if key not in INITIAL_FIELDS and key != 'timestamp':
                     dico[val['timestamp']][key] = val[key]
-
-def compute_date(time):
-    return datetime.fromtimestamp(int(time))
 
 
 def import_data_into_ELK(client, data):
     logging.debug(f'##data: {data}')
-    body = {
+    '''body = {
         'timestamp': data['timestamp'],
         'pseudo': data['pseudo'],
         'tweet': data['tweet'],
         'offense': data['offense'],
         'sentiment': data['sentiment']   
-    }
+    }'''
 
     # Index the document with the timestamp as the index
-    response = client.index(index=ELK_INDEX_NAME, body=body, id=data['timestamp'])
+    response = client.index(index=ELK_INDEX_NAME, body=data, id=data['timestamp'])
     if response['result'] == 'created':
-        print(f"Document indexed with timestamp: {data['timestamp']}")
+        logging.debug(f"Document indexed with timestamp: {data['timestamp']}")
     else:
-        print(f"Failed to index document with timestamp: {data['timestamp']}")
-
-
-
+        logging.debug(f"Failed to index document with timestamp: {data['timestamp']}")
 
 
 def main():
-
-
-    
     # Define the Elasticsearch host
     elasticsearch_host = 'elasticsearch'  # Container name of Elasticsearch
 
@@ -110,31 +96,14 @@ def main():
     logging.debug(f"Connected to Elasticsearch successfully.")
 
     settings = {
-    "settings": {
-        "number_of_shards": 1,
-        "number_of_replicas": 0
-    },
-    "mappings": {
-        "properties": {
-            "timestamp": {
-                "type": "date"
-            },
-            "pseudo": {
-                "type": "text"
-            },
-            "tweet": {
-                "type": "text"
-            },
-            "offense": {
-                "type": "integer"
-            },
-            "sentiment": {
-                "type": "integer"
-            }
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        },
+        "mappings": {
+            "properties": define_index_properties()
         }
     }
-    }
-    
 
     try:
         # Create the index with the settings and mappings above if doesn't already exist
@@ -142,17 +111,18 @@ def main():
         logging.debug(f"INDEX CREATED: {response}")
     except Exception as e:
         logging.error(f"Error creating the index: {e}")
-        # If the index already exists, delete what's in it
-        delete_query = {
-            "query": {
-                "match_all": {}
-            }
+
+    # If the index already exists, delete what's in it
+    delete_query = {
+        "query": {
+            "match_all": {}
         }
-        response = client.delete_by_query(index=ELK_INDEX_NAME, body=delete_query)
-        logging.debug(f"DELETE RESPONSE: {response}")
+    }
+    response = client.delete_by_query(index=ELK_INDEX_NAME, body=delete_query)
+    logging.debug(f"DELETE RESPONSE: {response}")
 
     c = Consumer({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-        'group.id': KAFKA_GROUP_NAME,
+        'group.id': 'group',
         'auto.offset.reset': 'earliest'})
 
     c.subscribe([KAFKA_AGGREGATION_TOPIC])
@@ -182,13 +152,10 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(filename='logs_aggregation.log', encoding='utf-8', level=logging.DEBUG)
 
-    logging.debug(f"Nom du fichier de stockage des résultats : {FILENAME_RESULTS}")
-    logging.debug(f"Champs communs entre les JSONs : {KEYS}")
-    logging.debug(f"Nombre de métadonnées : {NB_CONSUMERS}")
+    logging.debug(f"ELK index name : {ELK_INDEX_NAME}")
+    logging.debug(f"Liste des consumers : {CONSUMERS}")
+    logging.debug(f"Liste des champs initiaux : {INITIAL_FIELDS}")
     logging.debug(f"Kafka bootstrap servers : {KAFKA_BOOTSTRAP_SERVERS}")
-    logging.debug(f"Kafka groupe : {KAFKA_GROUP_NAME}")
     logging.debug(f"Kafka aggregation TOPIC: {KAFKA_AGGREGATION_TOPIC}")
-    logging.debug(f"ELK index name: {ELK_INDEX_NAME}")
-    logging.debug(f"Liste des consumers: {CONSUMER_LIST}")
 
     main()

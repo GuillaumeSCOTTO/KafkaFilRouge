@@ -10,6 +10,8 @@ from confluent_kafka import Producer
 
 FILENAME_DATA = os.getenv('FILENAME_DATA')
 SPEED = int(os.getenv('SPEED'))
+TIMESTAMP_FIELD = int(os.getenv('TIMESTAMP_FIELD')) - 1
+INITIAL_FIELDS = {k: v-1 for k, v in json.loads(os.getenv('INITIAL_FIELDS')).items()}
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 KAFKA_TOPIC = os.getenv('KAFKA_TOPIC')
@@ -33,10 +35,17 @@ def compute_date(time):
     return datetime.fromtimestamp(int(time))
 
 
-def send_msg(timestamp, value, producer):
-    dico = {'timestamp': timestamp, 'pseudo': value[0], 'tweet': value[1]}
-    result = json.dumps(dico)
+def send_msg(timestamp, values, producer):
+    values['timestamp'] = timestamp
+    result = json.dumps(values)
     producer.produce(KAFKA_TOPIC, value=result, callback=acked)
+
+
+def get_other_fields(row):
+    dico = {}
+    for k,v in INITIAL_FIELDS.items():
+        dico[k] = row[v]
+    return dico
 
 
 def main():
@@ -46,20 +55,20 @@ def main():
     firstline = True
 
     dir = '/'.join(os.getcwd().split('\\'))
-    logging.debug(f"Chemin du csv : {type(FILENAME_DATA), FILENAME_DATA}")
     for row in rows_from_a_csv_file(FILENAME_DATA):
+        actual_timestamp = str(int(time.time()))
         try:
             if firstline is True:
                 firstline = False
-                timestamp = row[1]
+                timestamp = row[TIMESTAMP_FIELD]
 
             else:
-                new_timestamp = row[1]
+                new_timestamp = row[TIMESTAMP_FIELD]
                 diff, timestamp = ((compute_date(new_timestamp) - compute_date(timestamp))/SPEED).total_seconds(), new_timestamp
+                logging.debug(f"Time sleep: {diff}")
                 time.sleep(diff)
 
-            value = (row[4], row[5])
-            send_msg(timestamp, value, producer)
+            send_msg(actual_timestamp, get_other_fields(row), producer)
             producer.flush()
 
         except TypeError as e:
@@ -72,6 +81,8 @@ if __name__ == "__main__":
 
     logging.debug(f"Nom du fichier de données : {FILENAME_DATA}")
     logging.debug(f"Vitesse de production des données : {SPEED}")
+    logging.debug(f"Emplacement du champ timestamp : {TIMESTAMP_FIELD}")
+    logging.debug(f"Emplacement des autres champs : {INITIAL_FIELDS}")
     logging.debug(f"Kafka bootstrap servers : {KAFKA_BOOTSTRAP_SERVERS}")
     logging.debug(f"Kafka topic sur lequel sont postées les données : {KAFKA_TOPIC}")
 
