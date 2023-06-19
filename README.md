@@ -113,7 +113,7 @@ Les modèles ajoutés ne peuvent qu'effectuer de l'inférence sur un champ texte
 
 Voici à quoi ressemble la construction d'un Consumer dans le *docker-compose.yml* : 
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/consumer.PNG)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/17ccb13bd3f35e419db6631ca58f32b46876e84a/pictures/consumer.PNG)
 
 Plusieurs champs sont à renseigner : 
 - *INFERENCE_PYTHON_FILE* : nom du fichier python comportant deux fonctions, il doit respecté la convention suivante => *{NomMétadonnée}_inference.py*, le nom de la métadonnée se retrouve dans la variable du fichier *.env*.
