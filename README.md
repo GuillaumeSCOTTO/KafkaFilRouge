@@ -62,27 +62,15 @@ Il suffit ensuite d'aller dans la rubrique *Dashboard* et cliquer sur *PFR*.
 Il est possible d'intéragir avec la base de donnée dans l'outil *Dev Tools* de Kibana.
 
 - Retourne 10 documents dans l'index *pfr* :
-```GET /pfr/_search
-{
-  "query": {
-    "match_all": {}
-  }
-}```
+```GET /pfr/_search{  "query": {    "match_all": {}  }}```
 
 - Retourne les documents dans l'index *pfr* matchant le *pseudo* *scotthamilton* :
-```GET /pfr/_search
-{
-  "query": {
-    "match": {
-      "pseudo": "scotthamilton"
-    }
-  }
-}```
+```GET /pfr/_search{  "query": {    "match": {      "pseudo": "scotthamilton"    }  }}```
 
 
 ## 2. Configuration
 
-### a. Fichier de données
+### i. Fichier de données
 
 Le jeu de données initial provient de [sentiment140](https://www.kaggle.com/datasets/kazanova/sentiment140) situé dans */data/*.
 
@@ -101,7 +89,7 @@ Un champ supplémentaire *SPEED* dans le conteneur *producer* sert à accélére
 Par soucis d'utilisation, les timestamp sont convertis en temps réel. Seul la différence de temps entre deux tweets est respectée.
 
 
-### b. Ajout d'un consumer (métadonnée)
+### ii. Ajout d'un consumer (métadonnée)
 
 Les modèles ajoutés ne peuvent qu'effectuer de l'inférence sur un champ texte.
 Voici à quoi ressemble la construction d'un Consumer dans le *docker-compose.yml* : 
@@ -138,7 +126,7 @@ Enfin dans le fichier *.env* :
 Le nouveau modèle est maintenant normalement configuré !!
 
 
-### c. Scale docker-compose
+### iii. Scale docker-compose
 
 Il est possible d'intégrer de la scalabilité horizontale pour partager la charge sur un Consumer avec une option dans la configuration d'un conteneur dans le *docker-compose.yml*.
 Le cas d'utilisation de cette feature peut être dû à un temps d'inférence trop long sur un des Consumers.
@@ -150,7 +138,7 @@ Cette fonctionnalité permet par exemple de doublé le nombre de conteneur pour 
 Les conteneurs répliqués ont exactement les mêmes caractéristiques.
 
 
-### d. Modifications du dashboard Kibana
+### iv. Modifications du dashboard Kibana
 
 Sur le dashboard par défaut on retrouve 4 lens :
 - Count of records : nombre de tweets reçus dans l'intervalle de temps sélectionné
