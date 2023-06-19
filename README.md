@@ -4,7 +4,7 @@ Ce repo a été réalisé dans le cadre du projet fil rouge du Mastère spécial
 L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leur évolution et potentiellement identifier une campagne de désinformation.
 Deux métadonnées sont extraites, une amélioration pourra être d'apporter de nouveaux modèles pour l'extraction d'autres métadonnées. Ce Markdown contient les explication nécessaires pour l'ajout de nouveaux modèles.
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/structure.svg)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/structure.png)
 
 Le projet a entièrement été réalisé avec ces technologies : 
 - **Python** pour la partie script
@@ -80,10 +80,10 @@ Il est possible de modifier le CSV de données se trouvant dans le chemin suivan
 - Le fichier comprend un champ **timestamp** sous **format string** et **Unix Timestamp**
 - Préciser dans le *.env* les champs à conserver et leur position dans le CSV
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/env_file.png)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/env_file.PNG)
 
-	- Colonne du champ **timestamp** (1 => première colonne) dans la variable *TIMESTAMP_FIELD*
-	- Colonne des autres champs et leur nom dans la variable *INITIAL_FIELDS*
+- Colonne du champ **timestamp** (1 => première colonne) dans la variable *TIMESTAMP_FIELD*
+- Colonne des autres champs et leur nom dans la variable *INITIAL_FIELDS*
 	
 Un champ supplémentaire *SPEED* dans le conteneur *producer* sert à accélérer le stream des tweets par rapport aux Timestamps initiaux.
 Par soucis d'utilisation, les timestamp sont convertis en temps réel. Seul la différence de temps entre deux tweets est respectée.
@@ -94,7 +94,7 @@ Par soucis d'utilisation, les timestamp sont convertis en temps réel. Seul la d
 Les modèles ajoutés ne peuvent qu'effectuer de l'inférence sur un champ texte.
 Voici à quoi ressemble la construction d'un Consumer dans le *docker-compose.yml* : 
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/consumer.png)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/consumer.PNG)
 
 Plusieurs champs sont à renseigner : 
 - *INFERENCE_PYTHON_FILE* : nom du fichier python comportant deux fonctions, il doit respecté la convention suivante => *{NomMétadonnée}_inference.py*, le nom de la métadonnée se retrouve dans la variable du fichier *.env*.
@@ -104,6 +104,8 @@ Plusieurs champs sont à renseigner :
 - *INFERENCE_PYTHON_MODEL* : nom du modèle sous format *.pth* ou *.pth.tar* 
 - *INFERENCE_CLASSIFIER_NAME* : *None* si le modèle possède une classe sinon le nom de la classe
 
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/consumer_files.PNG)
+
 Les fichiers du modèles doivent être stockés dans un nouveau répertoire à la racine de */code/*, ce répertoire doit contenir :
 - fichier *.py* contenant les deux fonctions
 - le modèle en *.pth* ou *.pth.tar*
@@ -112,7 +114,7 @@ Les fichiers du modèles doivent être stockés dans un nouveau répertoire à l
 
 Il faut que le nom du répertoire du nouveau modèle soit le même dans la variable *dockerfile* du *docker-compose.yml*.
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/consumer_dockerfile.png)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/consumer_dockerfile.PNG)
 
 Dans ce *Dockerfile*, on retrouve les commandes :
 - d'installation des dépendances => le nom du répertoire doit être modifié
@@ -131,8 +133,7 @@ Le nouveau modèle est maintenant normalement configuré !!
 Il est possible d'intégrer de la scalabilité horizontale pour partager la charge sur un Consumer avec une option dans la configuration d'un conteneur dans le *docker-compose.yml*.
 Le cas d'utilisation de cette feature peut être dû à un temps d'inférence trop long sur un des Consumers.
 
-```deploy:
-  replicas: 2```
+```deploy:  replicas: 2```
 
 Cette fonctionnalité permet par exemple de doublé le nombre de conteneur pour un Consumer et donc diviser la charge d'inférence entre les deux.
 Les conteneurs répliqués ont exactement les mêmes caractéristiques.
@@ -146,7 +147,7 @@ Sur le dashboard par défaut on retrouve 4 lens :
 - Average of Offense every 10 min
 - Number of tweets per 10 min
 
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/dashboard_kibana.png)
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/dashboard_kibana.PNG)
 
 Il est possible de modifier les seuils de chacun des 3 graphiques en modifiant la Lens puis en allant dans *Reference Lines* et cliquer sur *Vertical Left Axis*, *Reference line value* permet ensuite de modifier la valeur du seuil.
 Il est aussi possible de modifier l'intervalle de temps d'aggrégation en cliquant cette fois-ci sur *timestamp* dans *horizontal axis* puis modifier le *minimum interval*, il est par défaut paramétré à 10 minutes.
