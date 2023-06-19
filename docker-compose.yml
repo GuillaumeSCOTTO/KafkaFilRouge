@@ -41,9 +41,6 @@ services:
     build:
       context: ./code
       dockerfile: ./consumer_offense/Dockerfile
-    deploy:
-      replicas: 2
-    container_name: consumer_offense
     depends_on:
       - kafka
     environment:
@@ -54,13 +51,15 @@ services:
       INFERENCE_PYTHON_FILE: offense_inference
       INFERENCE_PYTHON_MODEL: model_offense_inference.pth.tar
       INFERENCE_CLASSIFIER_NAME: None
+    #deploy:
+    #  mode: replicated
+    #  replicas: 2
     restart: "always"
 
   consumer_sentiment:
     build:
       context: ./code
       dockerfile: ./consumer_sentiment/Dockerfile
-    container_name: consumer_sentiment
     depends_on:
       - kafka
     environment:
@@ -71,6 +70,9 @@ services:
       INFERENCE_PYTHON_FILE: sentiment_inference
       INFERENCE_PYTHON_MODEL: model_sentiment_inference.pth
       INFERENCE_CLASSIFIER_NAME: SentimentClassifier
+    #deploy:
+    #  mode: replicated
+    #  replicas: 2
     restart: "always"
 
   producer:
@@ -87,7 +89,7 @@ services:
       INITIAL_FIELDS: "${INITIAL_FIELDS}"
       TIMESTAMP_FIELD: "${TIMESTAMP_FIELD}"
       FILENAME_DATA: data.csv
-      SPEED: 10
+      SPEED: 1000
     restart: "always"
 
   elasticsearch:

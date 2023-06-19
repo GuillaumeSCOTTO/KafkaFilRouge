@@ -1,7 +1,9 @@
 # Infrastructure de traitement et d'analyse de Tweets
 
 Ce repo a été réalisé dans le cadre du projet fil rouge du Mastère spécialisé Big Data de Télécom Paris en collaboration avec Airbus Defence&Space.
+
 L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leur évolution et potentiellement identifier une campagne de désinformation.
+
 Deux métadonnées sont extraites, une amélioration pourra être d'apporter de nouveaux modèles pour l'extraction d'autres métadonnées. Ce Markdown contient les explication nécessaires pour l'ajout de nouveaux modèles.
 
 ![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/structure.png)
@@ -57,15 +59,28 @@ Chaque container scripté avec Python possède un document de logs qui peut êtr
 - ```cat logs_{nom_consumer}.logs```
 
 Un dashboard est accessible via Kibana en local via l'URL suivant : [Kibana Dashboard](http://localhost:5601) .
+
 Il suffit ensuite d'aller dans la rubrique *Dashboard* et cliquer sur *PFR*.
 
 Il est possible d'intéragir avec la base de donnée dans l'outil *Dev Tools* de Kibana.
 
 - Retourne 10 documents dans l'index *pfr* :
-```GET /pfr/_search{  "query": {    "match_all": {}  }}```
+```GET /pfr/_search{  
+	"query": {    
+		"match_all": {}  
+	}
+}
+```
 
 - Retourne les documents dans l'index *pfr* matchant le *pseudo* *scotthamilton* :
-```GET /pfr/_search{  "query": {    "match": {      "pseudo": "scotthamilton"    }  }}```
+```GET /pfr/_search{  
+	"query": {    
+		"match": {      
+			"pseudo": "scotthamilton"    
+		}  
+	}
+}
+```
 
 
 ## 2. Configuration
@@ -86,19 +101,20 @@ Il est possible de modifier le CSV de données se trouvant dans le chemin suivan
 - Colonne des autres champs et leur nom dans la variable *INITIAL_FIELDS*
 	
 Un champ supplémentaire *SPEED* dans le conteneur *producer* sert à accélérer le stream des tweets par rapport aux Timestamps initiaux.
+
 Par soucis d'utilisation, les timestamp sont convertis en temps réel. Seul la différence de temps entre deux tweets est respectée.
 
 
 ### ii. Ajout d'un consumer (métadonnée)
 
 Les modèles ajoutés ne peuvent qu'effectuer de l'inférence sur un champ texte.
+
 Voici à quoi ressemble la construction d'un Consumer dans le *docker-compose.yml* : 
 
 ![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/consumer.PNG)
 
 Plusieurs champs sont à renseigner : 
 - *INFERENCE_PYTHON_FILE* : nom du fichier python comportant deux fonctions, il doit respecté la convention suivante => *{NomMétadonnée}_inference.py*, le nom de la métadonnée se retrouve dans la variable du fichier *.env*.
-
 	- *inference* pour prédire sur un champ texte
 	- *load_model* pour charger le modèle
 - *INFERENCE_PYTHON_MODEL* : nom du modèle sous format *.pth* ou *.pth.tar* 
@@ -131,12 +147,20 @@ Le nouveau modèle est maintenant normalement configuré !!
 ### iii. Scale docker-compose
 
 Il est possible d'intégrer de la scalabilité horizontale pour partager la charge sur un Consumer avec une option dans la configuration d'un conteneur dans le *docker-compose.yml*.
+
 Le cas d'utilisation de cette feature peut être dû à un temps d'inférence trop long sur un des Consumers.
 
-```deploy:  replicas: 2```
+```deploy:
+	mode: replicated
+	replicas: 2
+```
+
+Il faut en plus lancer le projet avec la commande : ```docker-compose --compatibility up``` car aucun orchestrateur n'est utilisé.
 
 Cette fonctionnalité permet par exemple de doublé le nombre de conteneur pour un Consumer et donc diviser la charge d'inférence entre les deux.
 Les conteneurs répliqués ont exactement les mêmes caractéristiques.
+
+Pour ne pas l'utiliser il faut commenter cette partie dans le *docker-compose.yml*.
 
 
 ### iv. Modifications du dashboard Kibana
@@ -150,7 +174,9 @@ Sur le dashboard par défaut on retrouve 4 lens :
 ![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/a734323b0c0c5c4a181aa88d18ecb5f1f17d53aa/pictures/dashboard_kibana.PNG)
 
 Il est possible de modifier les seuils de chacun des 3 graphiques en modifiant la Lens puis en allant dans *Reference Lines* et cliquer sur *Vertical Left Axis*, *Reference line value* permet ensuite de modifier la valeur du seuil.
+
 Il est aussi possible de modifier l'intervalle de temps d'aggrégation en cliquant cette fois-ci sur *timestamp* dans *horizontal axis* puis modifier le *minimum interval*, il est par défaut paramétré à 10 minutes.
+
 L'ajout de nouvelles Lens est bien évidemment autorisé.
 
 
