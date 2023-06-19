@@ -1,46 +1,176 @@
-![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/structure.png)
+# Infrastructure de traitement et d'anlayse de Tweets
 
-Commande pour lancer le projet : docker-compose up
+Ce repo a été réalisé dans le cadre du projet fil rouge du Mastère spécialisé Big Data de Télécom Paris en collaboration avec Airbus Defence&Space.
+L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leur évolution et potentiellement identifier une campagne de désinformation.
+Deux métadonnées sont extraites, une amélioration pourra être d'apporter de nouveaux modèles pour l'extraction d'autres métadonnées. Ce Markdown contient les explication nécessaires pour l'ajout de nouveaux modèles.
 
-Le Producer envoie les données automatiquement.
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/structure.svg)
 
-Les consommeurs les traitent automatiquement.
-
-Attendre quelques minutes après le docker compose up pour voir les résultats dans le conteneur aggregator: 
-
-docker exec -it aggregator bash
-
-puis 
+Le projet a entièrement été réalisé avec ces technologies : 
+- **Python** pour la partie script
+- **Docker** pour assurer la portabilité et le déploiement
+- **Apache Kafka** pour créer le streaming de données et assurer une scalabilité du projet
+- **ElasticSearch** et **Kibana** pour stocker et analyser aisément les métadonnées extraites
 
 
-cat results.txt
+## Sommaire
 
-Le projet contient 8 conteneurs :
+1. Lancement et utilisation du projet
+2. Configuration
+    <ol type="a">
+	 <li>Fichier de données</li>
+	 <li>Ajout d'un consumer (métadonnée)</li>
+	 <li>Scale docker-compose</li>
+	 <li>Modifications du dashboard Kibana</li>
+	</ol>
+3. Informations supplémentaires
+
+
+## 1. Lancement et utilisation du projet
+
+Seul **Docker** a besoin d'être installé sur la machine.
+
+Le projet a été testé sur :
+- Windows 10 avec Docker Desktop installé  
+- Mac puce M1/M2
+ 
+Il est recommandé d'avoir :
+- au moins 30Go de disque mémoire disponible
+- au moins 8Go de RAM
+
+Liste des différents conteneurs : 
 - Zookeeper
 - Kafka
-- Un premier extracteur de métadonnée (offenseval)
-- Un deuxième extracteur de métadonnée (offenseval)
-- Un producer qui envoie les données
-- Un aggregator qui aggrège les résultats des modèles (= les métadonnées)
-- Un elasticsearch qui va stocker les données
-- Un kibana pour visualiser les doonnées
-=======
+- Producer : crée le streaming des données à partir du fichier CSV
+- Consumer Offense : ajoute un score d'offense aux tweets
+- Consumer Sentiment : ajoute un socre de sentiments aux tweets
+- Aggregator : permet d'aggréger les données d'un tweet en un seul json
+- ElasticSearch
+- Kibana
 
-requête pour lire les données de l'index "pfr" :
+Pour lancer le projet, il suffit de se placer dans le répertoire du repo cloné et de lancer : 
+```docker-compose up```
+Le lancement peut mettre plusieurs minutes, il faut bien attendre que tous les conteneurs soient *up* avant d'accéder aux fonctionnalités de l'application.
 
-curl -XGET "http://localhost:9200/pfr/_search?pretty=true" -H 'Content-Type: application/json' -d'
+Chaque container scripté avec Python possède un document de logs qui peut être accéder via les commandes : 
+- ```docker exec -it {ID/nom du conteneur} bash```
+- ```cat logs_{nom_consumer}.logs```
+
+Un dashboard est accessible via Kibana en local via l'URL suivant : [Kibana Dashboard](http://localhost:5601) .
+Il suffit ensuite d'aller dans la rubrique *Dashboard* et cliquer sur *PFR*.
+
+Il est possible d'intéragir avec la base de donnée dans l'outil *Dev Tools* de Kibana.
+
+- Retourne 10 documents dans l'index *pfr* :
+```GET /pfr/_search
 {
   "query": {
     "match_all": {}
   }
-}
-'
-remplacer localhost par l'adresse IP de elastic si reqûete faite dans un conteneur
+}```
 
-requête pour lire un document par son id (timestamp) : 
+- Retourne les documents dans l'index *pfr* matchant le *pseudo* *scotthamilton* :
+```GET /pfr/_search
+{
+  "query": {
+    "match": {
+      "pseudo": "scotthamilton"
+    }
+  }
+}```
 
-curl -XGET "http://localhost:9200/pfr/_doc/{document_id}?pretty=true"
+
+## 2. Configuration
+
+### a. Fichier de données
+
+Le jeu de données initial provient de [sentiment140](https://www.kaggle.com/datasets/kazanova/sentiment140) situé dans */data/*.
+
+Il est possible de modifier le CSV de données se trouvant dans le chemin suivant */data/* à condition de respecter certaines conditions :
+- Nommé le fichier *data.csv*, peut être modifié dans le *docker-compose.yml* sinon
+- Le fichier n'a pas de ligne header
+- Le fichier comprend un champ **timestamp** sous **format string** et **Unix Timestamp**
+- Préciser dans le *.env* les champs à conserver et leur position dans le CSV
+
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/env_file.png)
+
+	- Colonne du champ **timestamp** (1 => première colonne) dans la variable *TIMESTAMP_FIELD*
+	- Colonne des autres champs et leur nom dans la variable *INITIAL_FIELDS*
+	
+Un champ supplémentaire *SPEED* dans le conteneur *producer* sert à accélérer le stream des tweets par rapport aux Timestamps initiaux.
+Par soucis d'utilisation, les timestamp sont convertis en temps réel. Seul la différence de temps entre deux tweets est respectée.
 
 
-accès Kibana (le chargement est long) : http://localhost:5601/
-##Access VM : ssh ubuntu@137.194.211.107
+### b. Ajout d'un consumer (métadonnée)
+
+Les modèles ajoutés ne peuvent qu'effectuer de l'inférence sur un champ texte.
+Voici à quoi ressemble la construction d'un Consumer dans le *docker-compose.yml* : 
+
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/consumer.png)
+
+Plusieurs champs sont à renseigner : 
+- *INFERENCE_PYTHON_FILE* : nom du fichier python comportant deux fonctions, il doit respecté la convention suivante => *{NomMétadonnée}_inference.py*, le nom de la métadonnée se retrouve dans la variable du fichier *.env*.
+
+	- *inference* pour prédire sur un champ texte
+	- *load_model* pour charger le modèle
+- *INFERENCE_PYTHON_MODEL* : nom du modèle sous format *.pth* ou *.pth.tar* 
+- *INFERENCE_CLASSIFIER_NAME* : *None* si le modèle possède une classe sinon le nom de la classe
+
+Les fichiers du modèles doivent être stockés dans un nouveau répertoire à la racine de */code/*, ce répertoire doit contenir :
+- fichier *.py* contenant les deux fonctions
+- le modèle en *.pth* ou *.pth.tar*
+- le *requirements.txt* contenant les dépendances python du modèle
+- le *Dockerfile* afin de créer l'image
+
+Il faut que le nom du répertoire du nouveau modèle soit le même dans la variable *dockerfile* du *docker-compose.yml*.
+
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/consumer_dockerfile.png)
+
+Dans ce *Dockerfile*, on retrouve les commandes :
+- d'installation des dépendances => le nom du répertoire doit être modifié
+- de copie des 2 fichiers du modèle => les nom du répertoire et des fichiers doivent être modifiés
+
+Enfin dans le fichier *.env* :
+- la variable *CONSUMERS_LIST* est un dictionnaire contenant:
+	- en clés : les noms des métadonnées en relation avec le nom du fichier *.py*
+	- en valeurs : le type de donnée retournée par le modèle ("integer", "float" ou "text")
+	
+Le nouveau modèle est maintenant normalement configuré !!
+
+
+### c. Scale docker-compose
+
+Il est possible d'intégrer de la scalabilité horizontale pour partager la charge sur un Consumer avec une option dans la configuration d'un conteneur dans le *docker-compose.yml*.
+Le cas d'utilisation de cette feature peut être dû à un temps d'inférence trop long sur un des Consumers.
+
+```deploy:
+  replicas: 2```
+
+Cette fonctionnalité permet par exemple de doublé le nombre de conteneur pour un Consumer et donc diviser la charge d'inférence entre les deux.
+Les conteneurs répliqués ont exactement les mêmes caractéristiques.
+
+
+### d. Modifications du dashboard Kibana
+
+Sur le dashboard par défaut on retrouve 4 lens :
+- Count of records : nombre de tweets reçus dans l'intervalle de temps sélectionné
+- Average of Sentiment every 10 min
+- Average of Offense every 10 min
+- Number of tweets per 10 min
+
+![Alt text](https://github.com/GuillaumeSCOTTO/KafkaFilRouge/blob/092844f85c073a33bafaf801a5ea133d72d90255/pictures/dashboard_kibana.png)
+
+Il est possible de modifier les seuils de chacun des 3 graphiques en modifiant la Lens puis en allant dans *Reference Lines* et cliquer sur *Vertical Left Axis*, *Reference line value* permet ensuite de modifier la valeur du seuil.
+Il est aussi possible de modifier l'intervalle de temps d'aggrégation en cliquant cette fois-ci sur *timestamp* dans *horizontal axis* puis modifier le *minimum interval*, il est par défaut paramétré à 10 minutes.
+L'ajout de nouvelles Lens est bien évidemment autorisé.
+
+
+## 3. Informations supplémentaires
+
+Le répertoire */elasticsearch/* stocke les configurations et les données dont :
+- le dashboard *PFR*
+- index pattern *pfr*
+- les données sont vidées à chaque nouveau lancement du ```docker-compose up``` dans le script *aggregator.py*
+
+Dans chaque DockerFile faisant intervenir Kafka (Ex: producer, aggregator, consumers), une commande commençant par *apt-get* est nécessaire pour l'utilisation de Kafka sur Mac, elle n'est pas nécessaire sur Windows et peut donc être commentée.
+

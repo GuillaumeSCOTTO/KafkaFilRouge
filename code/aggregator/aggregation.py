@@ -112,7 +112,6 @@ def main():
     except Exception as e:
         logging.error(f"Error creating the index: {e}")
 
-    # If the index already exists, delete what's in it
     delete_query = {
         "query": {
             "match_all": {}
