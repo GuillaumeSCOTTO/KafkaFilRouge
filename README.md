@@ -65,7 +65,8 @@ Il suffit ensuite d'aller dans la rubrique *Dashboard* et cliquer sur *PFR*.
 Il est possible d'intéragir avec la base de donnée dans l'outil *Dev Tools* de Kibana.
 
 - Retourne 10 documents dans l'index *pfr* :
-```GET /pfr/_search{  
+```
+GET /pfr/_search{  
 	"query": {    
 		"match_all": {}  
 	}
@@ -73,7 +74,8 @@ Il est possible d'intéragir avec la base de donnée dans l'outil *Dev Tools* de
 ```
 
 - Retourne les documents dans l'index *pfr* matchant le *pseudo* *scotthamilton* :
-```GET /pfr/_search{  
+```
+GET /pfr/_search{  
 	"query": {    
 		"match": {      
 			"pseudo": "scotthamilton"    
@@ -150,7 +152,8 @@ Il est possible d'intégrer de la scalabilité horizontale pour partager la char
 
 Le cas d'utilisation de cette feature peut être dû à un temps d'inférence trop long sur un des Consumers.
 
-```deploy:
+```
+deploy:
 	mode: replicated
 	replicas: 2
 ```
