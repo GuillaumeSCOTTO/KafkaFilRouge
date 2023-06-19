@@ -1,4 +1,4 @@
-# Infrastructure de traitement et d'anlayse de Tweets
+# Infrastructure de traitement et d'analyse de Tweets
 
 Ce repo a été réalisé dans le cadre du projet fil rouge du Mastère spécialisé Big Data de Télécom Paris en collaboration avec Airbus Defence&Space.
 L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leur évolution et potentiellement identifier une campagne de désinformation.
@@ -15,15 +15,15 @@ Le projet a entièrement été réalisé avec ces technologies :
 
 ## Sommaire
 
-1. Lancement et utilisation du projet
-2. Configuration
+1. [Lancement et utilisation du projet](#lancement-et-utilisation-du-projet)
+2. [Configuration](#configuration)
     <ol type="a">
-	 <li>Fichier de données</li>
-	 <li>Ajout d'un consumer (métadonnée)</li>
-	 <li>Scale docker-compose</li>
-	 <li>Modifications du dashboard Kibana</li>
+	 <li>[Fichier de données](#fichier-de-données)</li>
+	 <li>[Ajout d'un consumer (métadonnée)](#ajout-d'un-consumer-métadonnée)</li>
+	 <li>[Scale docker-compose](#scale-docker-compose)</li>
+	 <li>[Modifications du dashboard Kibana](#modifications-du-dashboard-kibana)</li>
 	</ol>
-3. Informations supplémentaires
+3. [Informations supplémentaires](#informations-supplémentaires)
 
 
 ## 1. Lancement et utilisation du projet
