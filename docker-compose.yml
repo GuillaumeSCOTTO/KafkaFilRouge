@@ -89,7 +89,7 @@ services:
       INITIAL_FIELDS: "${INITIAL_FIELDS}"
       TIMESTAMP_FIELD: "${TIMESTAMP_FIELD}"
       FILENAME_DATA: data.csv
-      SPEED: 1000
+      SPEED: 100
     restart: "always"
 
   elasticsearch:

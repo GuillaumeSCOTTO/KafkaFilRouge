@@ -65,7 +65,7 @@ def main():
             else:
                 new_timestamp = row[TIMESTAMP_FIELD]
                 diff, timestamp = ((compute_date(new_timestamp) - compute_date(timestamp))/SPEED).total_seconds(), new_timestamp
-                logging.debug(f"Time sleep: {diff}")
+                logging.debug(f"New timestamp: {compute_date(actual_timestamp)}, Time sleep: {diff}")
                 time.sleep(diff)
 
             send_msg(actual_timestamp, get_other_fields(row), producer)
