@@ -2,7 +2,7 @@
 
 Ce repo a été réalisé dans le cadre du projet fil rouge du Mastère spécialisé Big Data de Télécom Paris en collaboration avec Airbus Defence&Space.
 
-L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leur évolution et potentiellement identifier une campagne de désinformation.
+L'objectif est d'extraire des métadonnées de Tweets grâce à des modèles de langue tel qu'un score de sentiment et d'offense pour ensuite suivre leurs évolutions et potentiellement identifier une campagne de désinformation.
 
 Deux métadonnées sont extraites, une amélioration pourra être d'apporter de nouveaux modèles pour l'extraction d'autres métadonnées. Ce Markdown contient les explication nécessaires pour l'ajout de nouveaux modèles.
 
@@ -34,7 +34,7 @@ Seul **Docker** a besoin d'être installé sur la machine.
 
 Le projet a été testé sur :
 - Windows 10 avec Docker Desktop installé  
-- Mac puce M1/M2
+- Mac puce M1/M2 (voir la spécificité pour les puces Mac à la fin du README)
  
 Il est recommandé d'avoir :
 - au moins 30Go de disque mémoire disponible
@@ -191,4 +191,13 @@ Le répertoire */elasticsearch/* stocke les configurations et les données dont 
 - les données sont vidées à chaque nouveau lancement du ```docker-compose up``` dans le script *aggregator.py*
 
 Dans chaque DockerFile faisant intervenir Kafka (Ex: producer, aggregator, consumers), une commande commençant par *apt-get* est nécessaire pour l'utilisation de Kafka sur Mac, elle n'est pas nécessaire sur Windows et peut donc être commentée.
+
+Pour lancer l'application d'un Mac (testé sur du M2), Confluent n'a pas encore géré certaines spécifités liées à iOS. Il faut décommenter la partie :
+
+```#RUN apt-get update && \
+#  apt-get install -y --no-install-recommends gcc git libssl-dev g++ make && \
+#  cd /tmp && git clone https://github.com/edenhill/librdkafka.git && \
+#  cd librdkafka && git checkout tags/v1.7.0 && \
+#  ./configure --prefix=/usr/ && make && make install && \
+#  cd ../ && rm -rf librdkafka```
 
