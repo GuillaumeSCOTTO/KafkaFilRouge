@@ -192,7 +192,7 @@ Le répertoire */elasticsearch/* stocke les configurations et les données dont 
 
 Dans chaque DockerFile faisant intervenir Kafka (Ex: producer, aggregator, consumers), une commande commençant par *apt-get* est nécessaire pour l'utilisation de Kafka sur Mac, elle n'est pas nécessaire sur Windows et peut donc être commentée.
 
-Pour lancer l'application d'un Mac (testé sur du M2), Confluent n'a pas encore géré certaines spécifités liées à iOS. Il faut décommenter la partie :
+Pour lancer l'application d'un Mac (testé sur du M2), Confluent n'a pas encore géré certaines spécifités liées à iOS. Il faut décommenter la partie suivante dans chaque Dockerfile des consumers / producer:
 
 ```#RUN apt-get update && \
 #  apt-get install -y --no-install-recommends gcc git libssl-dev g++ make && \
